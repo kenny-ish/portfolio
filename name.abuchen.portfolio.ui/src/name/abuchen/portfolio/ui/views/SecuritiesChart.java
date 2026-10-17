@@ -303,6 +303,20 @@ public class SecuritiesChart
         }
     }
 
+    /**
+     * Returns the quote the 2nd (absolute difference) and the 3rd (percentage)
+     * y axis are relative to. If the chart is configured to show the
+     * development relative to the purchase price, the purchase price is used.
+     * If no purchase price is available (for example because the security has
+     * never been bought), the first quote of the displayed interval is used
+     * instead. The reference must never be missing: otherwise the axes keep
+     * the ranges calculated for the previously displayed security.
+     */
+    /* testing */ static double getAxisReferenceQuote(Optional<Double> purchasePrice, double firstQuoteOfInterval)
+    {
+        return purchasePrice.orElse(firstQuoteOfInterval);
+    }
+
     /* testing */ static class ChartRange
     {
         public final int start;
@@ -1083,7 +1097,7 @@ public class SecuritiesChart
                 double[] valuesRelativePositive = new double[range.size];
                 double[] valuesRelativeNegative = new double[range.size];
                 double[] valuesZeroLine = new double[range.size];
-                Double firstQuote = null;
+                double firstQuote;
                 Double referenceQuote = (prices.get(range.start).getValue() / Values.Quote.divider());
 
                 // Disable SWT antialias for more than 1000 records due to SWT
@@ -1103,9 +1117,8 @@ public class SecuritiesChart
                 if (costMethod != null)
                 {
                     Optional<Double> purchasePrice = getLatestPurchasePrice(security, costMethod);
-                    if (purchasePrice.isPresent())
-                        firstQuote = purchasePrice.get();
-                    else
+                    firstQuote = getAxisReferenceQuote(purchasePrice, referenceQuote);
+                    if (purchasePrice.isEmpty())
                         showAreaRelativeToFirstQuote = false;
                 }
                 else
